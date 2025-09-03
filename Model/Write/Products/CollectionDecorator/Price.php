@@ -87,7 +87,8 @@ class Price implements DecoratorInterface
         $priceProductIds   = array_column($priceQueryResult, 'entity_id');
         $productCollection = $this->collectionFactory->create()
             ->addFieldToFilter(
-                'entity_id', ['in' => $priceProductIds]
+                'entity_id',
+                ['in' => $priceProductIds]
             );
 
         foreach ($priceQueryResult as $row) {
