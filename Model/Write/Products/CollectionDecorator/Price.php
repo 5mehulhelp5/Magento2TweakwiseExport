@@ -83,8 +83,8 @@ class Price implements DecoratorInterface
 
         $this->exchangeRate = $exchangeRate ?? 1.0;
 
-        $priceFields       = $this->config->getPriceFields($collection->getStore()->getId());
-        $priceProductIds   = array_column($priceQueryResult, 'entity_id');
+        $priceFields = $this->config->getPriceFields($collection->getStore()->getId());
+        $priceProductIds = array_column($priceQueryResult, 'entity_id');
         $productCollection = $this->collectionFactory->create()
             ->addFieldToFilter(
                 'entity_id',
@@ -92,7 +92,7 @@ class Price implements DecoratorInterface
             );
 
         foreach ($priceQueryResult as $row) {
-            $entityId        = $row['entity_id'];
+            $entityId = $row['entity_id'];
             $row['currency'] = $currency->getCurrencyCode();
             $row['price'] = $this->getPriceValue($row, $priceFields);
 
