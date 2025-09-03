@@ -96,7 +96,7 @@ class Price implements DecoratorInterface
             $row['currency'] = $currency->getCurrencyCode();
             $row['price'] = $this->getPriceValue($row, $priceFields);
 
-            $product    = $productCollection->getItemById($entityId);
+            $product = $productCollection->getItemById($entityId);
             $taxClassId = $this->getTaxClassId($collection->get($entityId));
 
             if ($this->config->calculateCombinedPrices($store) && $this->isGroupedProduct($product)) {
