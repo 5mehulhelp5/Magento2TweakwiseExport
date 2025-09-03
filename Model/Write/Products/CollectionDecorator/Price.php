@@ -74,7 +74,7 @@ class Price implements DecoratorInterface
         $websiteId = $collection->getStore()->getWebsiteId();
 
         $priceSelect = $this->createPriceSelect($collection->getIds(), $websiteId);
-        $priceQuery = $priceSelect->getSelect()->query();
+        $priceQueryResult = $priceSelect->getSelect()->query()->fetchAll();
 
         $currency = $collection->getStore()->getCurrentCurrency();
         if ($collection->getStore()->getCurrentCurrencyRate() > 0.00001) {
@@ -83,14 +83,17 @@ class Price implements DecoratorInterface
 
         $this->exchangeRate = $exchangeRate ?? 1.0;
 
-        $priceFields = $this->config->getPriceFields($collection->getStore()->getId());
+        $priceFields       = $this->config->getPriceFields($collection->getStore()->getId());
+        $priceProductIds   = array_column($priceQueryResult, 'entity_id');
+        $productCollection = $this->collectionFactory->create()->addFieldToFilter('entity_id',
+            ['in' => $priceProductIds]);
 
-        while ($row = $priceQuery->fetch()) {
-            $entityId = $row['entity_id'];
+        foreach ($priceQueryResult as $row) {
+            $entityId        = $row['entity_id'];
             $row['currency'] = $currency->getCurrencyCode();
             $row['price'] = $this->getPriceValue($row, $priceFields);
 
-            $product = $this->collectionFactory->create()->getItemById($entityId);
+            $product    = $productCollection->getItemById($entityId);
             $taxClassId = $this->getTaxClassId($collection->get($entityId));
 
             if ($this->config->calculateCombinedPrices($store) && $this->isGroupedProduct($product)) {
