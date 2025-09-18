@@ -111,6 +111,7 @@ class Price implements DecoratorInterface
                 }
             }
         }
+
         return $row;
     }
 
@@ -124,6 +125,7 @@ class Price implements DecoratorInterface
         foreach ($priceFields as $priceField) {
             $row[$priceField] = $this->calculatePrice((float)$row[$priceField]);
         }
+
         return $row;
     }
 
@@ -295,6 +297,7 @@ class Price implements DecoratorInterface
             $optionId = $selection->getOptionId();
             $grouped[$optionId][] = $selection;
         }
+        
         return $grouped;
     }
 
