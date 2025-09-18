@@ -1,26 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tweakwise\Magento2TweakwiseExport\Model\Write\Products\CollectionDecorator;
 
 // phpcs:disable Magento2.Legacy.RestrictedCode.ZendDbSelect
 use Magento\Bundle\Model\Product\Type;
-use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\DataObject;
 use Magento\GroupedProduct\Model\Product\Type\Grouped;
-use Magento\Store\Model\Store;
-use Magento\Tax\Model\Calculation;
-use Tweakwise\Magento2TweakwiseExport\Exception\InvalidArgumentException;
 use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Price\Collection as PriceCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Store\Model\StoreManagerInterface;
-use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\ExportEntity;
 use Zend_Db_Select;
-use Magento\Tax\Model\TaxCalculation;
 use Magento\Framework\Data\Collection as DataCollection;
-use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
 
 class Price implements DecoratorInterface
 {
@@ -49,15 +45,11 @@ class Price implements DecoratorInterface
      * @param CollectionFactory $collectionFactory
      * @param StoreManagerInterface $storeManager
      * @param Config $config
-     * @param Calculation $taxCalculation
-     * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
         CollectionFactory $collectionFactory,
         StoreManagerInterface $storeManager,
         Config $config,
-        private readonly Calculation $taxCalculation,
-        private readonly ScopeConfigInterface $scopeConfig
     ) {
         $this->collectionFactory = $collectionFactory;
         $this->storeManager = $storeManager;
@@ -71,66 +63,75 @@ class Price implements DecoratorInterface
     public function decorate(Collection|PriceCollection $collection): void
     {
         $store = $collection->getStore();
-        $websiteId = $collection->getStore()->getWebsiteId();
+        $websiteId = $store->getWebsiteId();
 
-        $priceSelect = $this->createPriceSelect($collection->getIds(), $websiteId);
+        $priceSelect = $this->createPriceSelect($collection->getIds(), (int)$websiteId);
         $priceQueryResult = $priceSelect->getSelect()->query()->fetchAll();
 
-        $currency = $collection->getStore()->getCurrentCurrency();
-        if ($collection->getStore()->getCurrentCurrencyRate() > 0.00001) {
-            $exchangeRate = (float)$collection->getStore()->getCurrentCurrencyRate();
-        }
+        $currency = $store->getCurrentCurrency();
+        $this->exchangeRate = $store->getCurrentCurrencyRate() > 0.00001
+            ? (float)$store->getCurrentCurrencyRate()
+            : 1.0;
 
-        $this->exchangeRate = $exchangeRate ?? 1.0;
-
-        $priceFields = $this->config->getPriceFields($collection->getStore()->getId());
+        $priceFields = $this->config->getPriceFields($store->getId());
         $priceProductIds = array_column($priceQueryResult, 'entity_id');
         $productCollection = $this->collectionFactory->create()
-            ->addFieldToFilter(
-                'entity_id',
-                ['in' => $priceProductIds]
-            );
+            ->addFieldToFilter('entity_id', ['in' => $priceProductIds]);
 
         foreach ($priceQueryResult as $row) {
-            $entityId = $row['entity_id'];
+            $entityId = (int)$row['entity_id'];
             $row['currency'] = $currency->getCurrencyCode();
-            $row['price'] = $this->getPriceValue($row, $priceFields);
-
             $product = $productCollection->getItemById($entityId);
-            $taxClassId = $this->getTaxClassId($collection->get($entityId));
 
-            if ($this->config->calculateCombinedPrices($store) && $this->isGroupedProduct($product)) {
-                $row['price'] = $this->calculateGroupedProductPrice($entityId, $store, $taxClassId);
-            } elseif ($this->config->calculateCombinedPrices($store) && $this->isBundleProduct($product)) {
-                $row['price'] = $this->calculateBundleProductPrice($entityId, $store, $taxClassId);
-            } else {
-                foreach ($priceFields as $priceField) {
-                    $row[$priceField] = $this->calculatePrice((float)$row[$priceField], $taxClassId, $store);
-                }
-            }
+            $row = $this->applyCombinedPrices($row, $product, $store);
+            $row = $this->applyPriceFields($row, $priceFields);
+            $row['price'] = $this->getPriceValue($row, $priceFields);
 
             $collection->get($entityId)->setFromArray($row);
         }
     }
 
     /**
-     * @param float $price
-     * @param int|null $taxClassId
-     * @param Store $store
-     * @return float
+     * @param array $row
+     * @param DataObject $product
+     * @return array
      */
-    private function calculatePrice(float $price, ?int $taxClassId, Store $store): float
+    private function applyCombinedPrices(array $row, DataObject $product, Store $store): array
     {
-        $price = $this->calculateExchangeRate($price);
+        if ($this->config->calculateCombinedPrices($store)) {
+            if ($this->isGroupedProduct($product)) {
+                $prices = $this->calculateGroupedProductPrice((int)$product->getId());
+                foreach ($prices as $price => $value) {
+                    $row[$price] = $value;
+                }
+            } elseif ($this->isBundleProduct($product)) {
+                $prices = $this->calculateBundleProductPrice((int)$product->getId());
+                foreach ($prices as $price => $value) {
+                    $row[$price] = $value;
+                }
+            }
+        }
+        return $row;
+    }
 
-        return $price;
+    /**
+     * @param array $row
+     * @param array $priceFields
+     * @return array
+     */
+    private function applyPriceFields(array $row, array $priceFields): array
+    {
+        foreach ($priceFields as $priceField) {
+            $row[$priceField] = $this->calculatePrice((float)$row[$priceField]);
+        }
+        return $row;
     }
 
     /**
      * @param float $price
      * @return float
      */
-    private function calculateExchangeRate(float $price): float
+    private function calculatePrice(float $price): float
     {
         return $price * $this->exchangeRate;
     }
@@ -180,53 +181,32 @@ class Price implements DecoratorInterface
     }
 
     /**
-     * @param ProductInterface $product
-     * @return int|null
+     * @param DataObject$product
+     * @return bool
      */
-    protected function getTaxClassId(ExportEntity $product): ?int
+    protected function isGroupedProduct(DataObject $product): bool
     {
-        try {
-            if (isset($product->getAttribute('tax_class_id')[0])) {
-                return $product->getAttribute('tax_class_id')[0];
-            }
-
-            return null;
-        } catch (InvalidArgumentException) {
-            return null;
-        }
+        return $product->getTypeId() === Grouped::TYPE_CODE;
     }
 
     /**
-     * @param ProductInterface $product
+     * @param DataObject $product
      * @return bool
      */
-    protected function isGroupedProduct(ProductInterface $product): bool
+    protected function isBundleProduct(DataObject $product): bool
     {
-        return $product?->getTypeId() === Grouped::TYPE_CODE;
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @return bool
-     */
-    protected function isBundleProduct(ProductInterface $product): bool
-    {
-        return $product?->getTypeId() === Type::TYPE_CODE;
+        return $product->getTypeId() === Type::TYPE_CODE;
     }
 
     /**
      * @param int $entityId
      * @param callable $getAssociatedItems
-     * @param Store $store
-     * @param int|null $taxClassId
-     * @return float
+     * @return array
      */
     protected function calculateProductPrice(
         int $entityId,
-        callable $getAssociatedItems,
-        Store $store,
-        ?int $taxClassId
-    ): float {
+        callable $getAssociatedItems
+    ): array {
         $product = $this->collectionFactory->create()->getItemById($entityId);
         $associatedItems = $getAssociatedItems($product);
 
@@ -235,57 +215,111 @@ class Price implements DecoratorInterface
             $associatedItems = $associatedItems->getItems();
         }
 
+        $price = [
+            'min_price' => 0.0,
+            'max_price' => 0.0,
+            'final_price' => 0.0,
+        ];
+
         return array_reduce(
             $associatedItems,
-            function ($total, $item) use ($store, $taxClassId) {
-                $basePrice = $item->getPrice();
-                $price = $this->calculatePrice(
-                    $basePrice,
-                    $taxClassId,
-                    $store
-                );
-                return $total + ($price * $item->getQty());
+            function ($result, $item) {
+                $result['min_price'] += min([$item->getPrice(), $item->getFinalPrice()]) * $item->getQty();
+                $result['max_price'] += max([$item->getPrice(), $item->getFinalPrice()]) * $item->getQty();
+                $result['final_price'] += $item->getFinalPrice() * $item->getQty();
+                return $result;
             },
-            0
+            $price
         );
     }
 
     /**
      * @param int $entityId
-     * @param Store $store
-     * @param int|null $taxClassId
-     * @return float
+     * @return array
      */
-    protected function calculateGroupedProductPrice(int $entityId, Store $store, ?int $taxClassId): float
+    protected function calculateGroupedProductPrice(int $entityId): array
     {
         return $this->calculateProductPrice(
             $entityId,
             function ($product) {
                 return $product->getTypeInstance()->getAssociatedProducts($product);
-            },
-            $store,
-            $taxClassId
+            }
         );
     }
 
     /**
      * @param int $entityId
-     * @param Store $store
-     * @param int|null $taxClassId
-     * @return float
+     * @return array
      */
-    protected function calculateBundleProductPrice(int $entityId, Store $store, ?int $taxClassId): float
+    protected function calculateBundleProductPrice(int $entityId): array
     {
-        return $this->calculateProductPrice(
-            $entityId,
-            function ($product) {
-                return $product->getTypeInstance()->getSelectionsCollection(
-                    $product->getTypeInstance()->getOptionsIds($product),
-                    $product
-                );
-            },
-            $store,
-            $taxClassId
+        $price = [
+            'min_price' => 0.0,
+            'max_price' => 0.0,
+            'final_price' => 0.0,
+        ];
+
+        $product = $this->collectionFactory->create()->getItemById($entityId);
+        if ($product === null) {
+            return $price;
+        }
+
+        $selections = $product->getTypeInstance()->getSelectionsCollection(
+            $product->getTypeInstance()->getOptionsIds($product),
+            $product
         );
+
+        if ($selections instanceof \Magento\Framework\Data\Collection) {
+            $selections = $selections->getItems();
+        }
+
+        $groupedSelections = $this->groupSelectionsByOption($selections);
+
+        foreach ($groupedSelections as $selectionsForOption) {
+            $price = $this->accumulateBundleOptionPrices($price, $selectionsForOption);
+        }
+
+        return $price;
+    }
+
+    /**
+     * Groups bundle selections by their option ID.
+     *
+     * @param array $selections
+     * @return array
+     */
+    private function groupSelectionsByOption(array $selections): array
+    {
+        $grouped = [];
+        foreach ($selections as $selection) {
+            $optionId = $selection->getOptionId();
+            $grouped[$optionId][] = $selection;
+        }
+        return $grouped;
+    }
+
+    /**
+     * Accumulates the price information for a single bundle option.
+     *
+     * @param array $price
+     * @param array $selectionsForOption
+     * @return array
+     */
+    private function accumulateBundleOptionPrices(array $price, array $selectionsForOption): array
+    {
+        if (empty($selectionsForOption)) {
+            return $price;
+        }
+
+        $selectionQty = (int)$selectionsForOption[0]->getDataByKey('selection_qty');
+        $minPrice = min(array_map(fn($option) => $option->getPrice(), $selectionsForOption));
+        $maxPrice = max(array_map(fn($option) => $option->getPrice(), $selectionsForOption));
+        $finalPrice = $selectionsForOption[0]->getFinalPrice();
+
+        $price['min_price'] += $minPrice * $selectionQty;
+        $price['max_price'] += $maxPrice * $selectionQty;
+        $price['final_price'] += $finalPrice * $selectionQty;
+
+        return $price;
     }
 }
