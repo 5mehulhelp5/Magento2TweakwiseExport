@@ -11,6 +11,8 @@ namespace Tweakwise\Magento2TweakwiseExport\Model;
 
 use DateTime;
 use IntlDateFormatter;
+use Magento\Eav\Api\AttributeSetRepositoryInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use SplFileInfo;
 use Magento\Framework\App\ProductMetadata as CommunityProductMetadata;
 use Magento\Framework\App\ProductMetadataInterface;
@@ -33,6 +35,8 @@ class Helper
      */
     protected $localDate;
 
+    protected static ?array $attributeSetNames = null;
+
     /**
      * Helper constructor.
      *
@@ -43,7 +47,9 @@ class Helper
     public function __construct(
         ProductMetadataInterface $productMetadata,
         Config $config,
-        TimezoneInterface $localDate
+        TimezoneInterface $localDate,
+        protected readonly AttributeSetRepositoryInterface $attributeSetRepository,
+        protected readonly SearchCriteriaBuilder $searchCriteriaBuilder
     ) {
         $this->productMetadata = $productMetadata;
         $this->config = $config;
@@ -148,5 +154,30 @@ class Helper
         }
 
         return __('Export never triggered.');
+    }
+
+    /**
+    * Load all attribute set names into a static array to prevent multiple loading
+     * @return array attribute set names with attribute set id as key
+     */
+    public function loadAttributeSetNames(): array
+    {
+        if (!empty(self::$attributeSetNames)) {
+            return self::$attributeSetNames;
+        }
+
+        $searchCriteria = $this->searchCriteriaBuilder->create();
+        $attributeSets = $this->attributeSetRepository->getList($searchCriteria)->getItems();
+
+        foreach ($attributeSets as $attributeSet) {
+            self::$attributeSetNames[$attributeSet->getAttributeSetId()] = $attributeSet->getAttributeSetName();
+        }
+
+        if (empty(self::$attributeSetNames)) {
+            //prevent result from being empty and loading attribute set names multiple times, should never happen
+            self::$attributeSetNames = ['empty' => 'empty'];
+        }
+
+        return self::$attributeSetNames;
     }
 }
