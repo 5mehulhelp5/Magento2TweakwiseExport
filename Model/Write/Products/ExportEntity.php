@@ -524,7 +524,6 @@ class ExportEntity
      */
     public function loadAttributeSetNames(): void
     {
-        $entitType =
         $searchCriteria = $this->searchCriteriaBuilder->create();
         $attributeSets = $this->attributeSetRepository->getList($searchCriteria)->getItems();
 
