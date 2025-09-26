@@ -158,8 +158,8 @@ class Helper
 
     /**
     * Load all attribute set names into a static array to prevent multiple loading
-     * @return array attribute set names with attribute set id as key
-     */
+    * @return array attribute set names with attribute set id as key
+    */
     public function loadAttributeSetNames(): array
     {
         if (!empty(self::$attributeSetNames)) {

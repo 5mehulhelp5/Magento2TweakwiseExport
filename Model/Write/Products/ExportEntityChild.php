@@ -50,8 +50,6 @@ class ExportEntityChild extends ExportEntity
             $visibility,
             $config,
             $helper,
-            $attributeRepository,
-            $searchCriteriaBuilder,
             $data
         );
 
