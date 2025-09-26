@@ -2,6 +2,8 @@
 
 namespace Tweakwise\Magento2TweakwiseExport\Model\Write\Products;
 
+use Magento\Eav\Api\AttributeSetRepositoryInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Tweakwise\Magento2TweakwiseExport\Exception\InvalidArgumentException;
 use Tweakwise\Magento2TweakwiseExport\Model\Helper;
 use Tweakwise\Magento2TweakwiseExport\Model\StockItem;
@@ -94,6 +96,16 @@ class ExportEntity
     protected $typeId;
 
     /**
+     * @var int
+     */
+    protected int $attributeSetId;
+
+    /**
+     * @var array
+     */
+    protected static array $attributeSetNames;
+
+    /**
      * ExportEntity constructor.
      *
      * @param Store $store
@@ -102,6 +114,8 @@ class ExportEntity
      * @param Visibility $visibility
      * @param Config $config
      * @param Helper $helper
+     * @param AttributeSetRepositoryInterface $attributeSetRepository
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param array $data
      */
     public function __construct(
@@ -111,6 +125,8 @@ class ExportEntity
         Visibility $visibility,
         private readonly Config $config,
         private readonly Helper $helper,
+        private readonly AttributeSetRepositoryInterface $attributeSetRepository,
+        private readonly SearchCriteriaBuilder $searchCriteriaBuilder,
         array $data = []
     ) {
         $this->setFromArray($data);
@@ -149,6 +165,11 @@ class ExportEntity
                 case 'price':
                     $this->setPrice((float) $value);
                     $this->addAttribute($key, (float) $value);
+                    break;
+                case  'attribute_set_id':
+                    $this->setAttributeSetId((int) $value);
+                    $this->addAttribute($key, (int) $value);
+                    $this->addAttributeSetName((int) $value);
                     break;
                 default:
                     $this->addAttribute($key, $value);
@@ -329,6 +350,39 @@ class ExportEntity
     }
 
     /**
+     * @param int $attributeSetId
+     */
+    public function setAttributeSetId(int $attributeSetId): void
+    {
+        $this->attributeSetId = $attributeSetId;
+    }
+
+    /**
+     * Add the attribute set name as an attribute
+     *
+     * @param int $attributeSetId
+     */
+    public function addAttributeSetName(int $attributeSetId) : void
+    {
+        if (empty(self::$attributeSetNames)) {
+            //get an array of all available attribute sets
+            $this->loadAttributeSetNames();
+        }
+
+        if (isset(self::$attributeSetNames[$attributeSetId])) {
+            $this->addAttribute('attribute_set_name', self::$attributeSetNames[$attributeSetId]);
+        }
+    }
+
+    /**
+     * @return int
+     */
+    public function getAttributeSetId(): int
+    {
+        return $this->attributeSetId;
+    }
+
+    /**
      * @param string $typeId
      */
     public function setTypeId(string $typeId): void
@@ -463,5 +517,24 @@ class ExportEntity
     protected function shouldExportByNameAttribute(): bool
     {
         return !empty($this->getName());
+    }
+
+    /**
+     * Load all attribute set names into a static array to prevent multiple loading
+     */
+    public function loadAttributeSetNames(): void
+    {
+        $entitType =
+        $searchCriteria = $this->searchCriteriaBuilder->create();
+        $attributeSets = $this->attributeSetRepository->getList($searchCriteria)->getItems();
+
+        foreach ($attributeSets as $attributeSet) {
+            self::$attributeSetNames[$attributeSet->getAttributeSetId()] = $attributeSet->getAttributeSetName();
+        }
+
+        if (empty(self::$attributeSetNames)) {
+            //prevent result from being empty and loading attribute set names multiple times, should never happen
+            self::$attributeSetNames = ['empty' => 'empty'];
+        }
     }
 }

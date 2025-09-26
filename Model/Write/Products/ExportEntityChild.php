@@ -2,6 +2,8 @@
 
 namespace Tweakwise\Magento2TweakwiseExport\Model\Write\Products;
 
+use Magento\Eav\Api\AttributeSetRepositoryInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Tweakwise\Magento2TweakwiseExport\Model\ChildOptions;
 use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Magento\Catalog\Model\Product\Visibility;
@@ -30,6 +32,8 @@ class ExportEntityChild extends ExportEntity
      * @param StockConfigurationInterface $stockConfiguration
      * @param Visibility $visibility
      * @param Helper $helper
+     * @param AttributeSetRepositoryInterface $attributeRepository
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param array $data
      */
     public function __construct(
@@ -39,6 +43,8 @@ class ExportEntityChild extends ExportEntity
         StockConfigurationInterface $stockConfiguration,
         Visibility $visibility,
         private readonly Helper $helper,
+        private readonly AttributeSetRepositoryInterface $attributeRepository,
+        private readonly SearchCriteriaBuilder $searchCriteriaBuilder,
         array $data = []
     ) {
         parent::__construct(
@@ -48,6 +54,8 @@ class ExportEntityChild extends ExportEntity
             $visibility,
             $config,
             $helper,
+            $attributeRepository,
+            $searchCriteriaBuilder,
             $data
         );
 
