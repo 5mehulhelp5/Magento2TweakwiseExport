@@ -166,7 +166,7 @@ class ExportEntity
                     $this->setPrice((float) $value);
                     $this->addAttribute($key, (float) $value);
                     break;
-                case  'attribute_set_id':
+                case 'attribute_set_id':
                     $this->setAttributeSetId((int) $value);
                     $this->addAttribute($key, (int) $value);
                     $this->addAttributeSetName((int) $value);
@@ -362,7 +362,7 @@ class ExportEntity
      *
      * @param int $attributeSetId
      */
-    public function addAttributeSetName(int $attributeSetId) : void
+    public function addAttributeSetName(int $attributeSetId): void
     {
         if (empty(self::$attributeSetNames)) {
             //get an array of all available attribute sets
