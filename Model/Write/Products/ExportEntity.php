@@ -12,6 +12,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\Store;
 use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Magento\Catalog\Model\Product\Type;
+
 use function in_array;
 
 /**
@@ -284,12 +285,18 @@ class ExportEntity
     public function addDate(string $attribute, string $value): void
     {
         if ($this->config->getDateField() === 'min') {
-            if (!isset($this->attributes[$attribute]) || strtotime($value) < strtotime(current($this->attributes[$attribute]))) {
+            if (
+                !isset($this->attributes[$attribute]) ||
+                strtotime($value) < strtotime(current($this->attributes[$attribute]))
+            ) {
                 $this->attributes[$attribute] = [$value];
                 return;
             }
         } elseif ($this->config->getDateField() === 'max') {
-            if (!isset($this->attributes[$attribute]) || strtotime($value) > strtotime(current($this->attributes[$attribute]))) {
+            if (
+                !isset($this->attributes[$attribute]) ||
+                strtotime($value) > strtotime(current($this->attributes[$attribute]))
+            ) {
                 $this->attributes[$attribute] = [$value];
             }
         }
