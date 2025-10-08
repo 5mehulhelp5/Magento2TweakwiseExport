@@ -109,6 +109,15 @@
                     </depends>
                 </field>
 
+                <field id="date_field" translate="label,comment" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Date fields (created at/ updated at)</label>
+                    <comment>Choose which dates to include: All exports every date (including child records), Min exports only the earliest, and Max exports only the latest.</comment>
+                    <source_model>Tweakwise\Magento2TweakwiseExport\Model\Config\Source\DateField</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+
                 <field id="price_field" translate="label,comment" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Price field</label>
                     <comment>Select which field is used as "price" in Tweakwise, selection will select each price field in order and return the first nonzero value. Prices are exported from price index table, note that catalogrule prices are available in field "min_price" so it could be that this value is lowed then for example "final_price". If your configurable / bundle products do not have a price attribute filled this will be zero.</comment>
