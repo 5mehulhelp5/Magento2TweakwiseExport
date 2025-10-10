@@ -12,8 +12,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\Store;
 use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Magento\Catalog\Model\Product\Type;
-
-use function in_array;
+use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\DateFieldType;
 
 /**
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
@@ -95,6 +94,8 @@ class ExportEntity
      */
     protected $typeId;
 
+    protected DateFieldType $dateFieldType;
+
     /**
      * ExportEntity constructor.
      *
@@ -127,35 +128,29 @@ class ExportEntity
      */
     public function setFromArray(array $data): void
     {
+        $handlers = [
+            'entity_id' => function ($value) { $this->id = (int) $value; },
+            'type_id'   => function ($value) { $this->setTypeId((string) $value); },
+            'status'    => function ($value) { $this->setStatus((int) $value); },
+            'visibility'=> function ($value) { $this->setVisibility((int) $value); },
+            'name'      => function ($value) { $this->setName((string) $value); },
+            'price'     => function ($value) { $this->setPrice((float) $value); },
+        ];
+
+        $dateFields = $this->config->getDateAttributes();
+
         foreach ($data as $key => $value) {
-            switch ($key) {
-                case 'entity_id':
-                    $this->id = (int) $value;
-                    break;
-                case 'type_id':
-                    $this->setTypeId((string) $value);
-                    $this->addAttribute($key, (string) $value);
-                    break;
-                case 'status':
-                    $this->setStatus((int) $value);
-                    $this->addAttribute($key, (int) $value);
-                    break;
-                case 'visibility':
-                    $this->setVisibility((int) $value);
-                    $this->addAttribute($key, (int) $value);
-                    break;
-                case 'name':
-                    $this->setName((string) $value);
-                    $this->addAttribute($key, (string) $value);
-                    break;
-                case 'price':
-                    $this->setPrice((float) $value);
-                    $this->addAttribute($key, (float) $value);
-                    break;
-                default:
-                    $this->addAttribute($key, $value);
-                    break;
+            if (isset($handlers[$key])) {
+                $handlers[$key]($value);
+                $this->addAttribute($key, $value);
+                continue;
+            } elseif (in_array($key, $dateFields, true)) {
+                $this->addDate($key, $value);
+                continue;
             }
+
+            $this->addAttribute($key, $value);
+
         }
     }
 
@@ -282,23 +277,34 @@ class ExportEntity
         return $this->categories;
     }
 
+    /**
+     * @param string $attribute
+     * @param string $value
+     *
+     * @return void
+     */
     public function addDate(string $attribute, string $value): void
     {
-        if ($this->config->getDateField() === 'min') {
-            if (
-                !isset($this->attributes[$attribute]) ||
-                strtotime($value) < strtotime(current($this->attributes[$attribute]))
-            ) {
-                $this->attributes[$attribute] = [$value];
-                return;
-            }
-        } elseif ($this->config->getDateField() === 'max') {
-            if (
-                !isset($this->attributes[$attribute]) ||
-                strtotime($value) > strtotime(current($this->attributes[$attribute]))
-            ) {
-                $this->attributes[$attribute] = [$value];
-            }
+        $dateFieldType = DateFieldType::from($this->config->getDateField());
+
+        if ($dateFieldType === DateFieldType::ALL) {
+            $this->addAttribute($attribute, $value);
+            return;
+        }
+
+        if (!isset($this->attributes[$attribute])) {
+            $this->attributes[$attribute] = [$value];
+            return;
+        }
+
+        $valueTime = strtotime($value);
+        $currentTime = strtotime(current($this->attributes[$attribute]));
+
+        if (
+            ($dateFieldType === DateFieldType::MIN && $valueTime < $currentTime) ||
+            ($dateFieldType === DateFieldType::MAX && $valueTime > $currentTime)
+        ) {
+            $this->attributes[$attribute] = [$value];
         }
     }
 
@@ -308,11 +314,6 @@ class ExportEntity
      */
     public function addAttribute(string $attribute, $value): void
     {
-        if ($this->config->getDateField() !== 'all' && in_array($attribute, $this->config->getDateAttributes(), true)) {
-            $this->addDate($attribute, (string) $value);
-            return;
-        }
-
         if (!isset($this->attributes[$attribute])) {
             $this->attributes[$attribute] = [];
         }

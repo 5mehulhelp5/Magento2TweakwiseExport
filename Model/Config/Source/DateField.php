@@ -7,16 +7,16 @@ use Magento\Framework\Option\ArrayInterface;
 class DateField implements ArrayInterface
 {
     /**
-     * {@inheritdoc}
+     * Return array of options as value-label pairs
+     *
+     * @return array
      */
-    public function toOptionArray()
+    public function toOptionArray(): array
     {
-        $dateFields = [
+        return [
             'all' => 'All Dates',
             'min' => 'Min Date',
             'max' => 'Max Date',
         ];
-
-        return $dateFields;
     }
 }
