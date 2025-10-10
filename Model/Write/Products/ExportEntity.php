@@ -2,8 +2,6 @@
 
 namespace Tweakwise\Magento2TweakwiseExport\Model\Write\Products;
 
-use Magento\Eav\Api\AttributeSetRepositoryInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
 use Tweakwise\Magento2TweakwiseExport\Exception\InvalidArgumentException;
 use Tweakwise\Magento2TweakwiseExport\Model\Helper;
 use Tweakwise\Magento2TweakwiseExport\Model\StockItem;
@@ -341,7 +339,7 @@ class ExportEntity
      */
     public function addAttributeSetName(int $attributeSetId): void
     {
-        $attributeSetNames = $this->helper->loadAttributeSetNames();
+        $attributeSetNames = $this->helper->getAttributeSetNames();
 
         if (isset($attributeSetNames[$attributeSetId])) {
             $this->addAttribute('attribute_set_name', $attributeSetNames[$attributeSetId]);

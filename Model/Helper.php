@@ -161,9 +161,9 @@ class Helper
      *
      * @return array
      */
-    public function loadAttributeSetNames(): array
+    public function getAttributeSetNames(): array
     {
-        if (!empty(self::$attributeSetNames)) {
+        if (is_array(self::$attributeSetNames)) {
             return self::$attributeSetNames;
         }
 
@@ -172,11 +172,6 @@ class Helper
 
         foreach ($attributeSets as $attributeSet) {
             self::$attributeSetNames[$attributeSet->getAttributeSetId()] = $attributeSet->getAttributeSetName();
-        }
-
-        if (empty(self::$attributeSetNames)) {
-            //prevent result from being empty and loading attribute set names multiple times, should never happen
-            self::$attributeSetNames = ['empty' => 'empty'];
         }
 
         return self::$attributeSetNames;

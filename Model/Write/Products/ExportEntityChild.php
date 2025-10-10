@@ -2,8 +2,6 @@
 
 namespace Tweakwise\Magento2TweakwiseExport\Model\Write\Products;
 
-use Magento\Eav\Api\AttributeSetRepositoryInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
 use Tweakwise\Magento2TweakwiseExport\Model\ChildOptions;
 use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Magento\Catalog\Model\Product\Visibility;
