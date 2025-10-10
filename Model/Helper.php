@@ -43,6 +43,8 @@ class Helper
      * @param ProductMetadataInterface $productMetadata
      * @param Config $config
      * @param TimezoneInterface $localDate
+     * @param AttributeSetRepositoryInterface $attributeSetRepository
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
      */
     public function __construct(
         ProductMetadataInterface $productMetadata,
@@ -163,7 +165,7 @@ class Helper
      */
     public function getAttributeSetNames(): array
     {
-        if (is_array(self::$attributeSetNames)) {
+        if (self::$attributeSetNames !== null) {
             return self::$attributeSetNames;
         }
 
