@@ -6,6 +6,7 @@ use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\Collection;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\CompositeExportEntityInterface;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Stock\Collection as StockCollection;
+use function in_array;
 
 class ChildrenAttributes implements DecoratorInterface
 {
@@ -49,6 +50,11 @@ class ChildrenAttributes implements DecoratorInterface
             foreach ($exportEntity->getExportChildren() as $child) {
                 foreach ($child->getAttributes() as $attributeData) {
                     if ($this->config->getSkipChildAttribute($attributeData['attribute'])) {
+                        continue;
+                    }
+
+                    if (in_array($attributeData['attribute'], $this->config->getDateAttributes(), true)) {
+                        $exportEntity->addDate($attributeData['attribute'], $attributeData['value']);
                         continue;
                     }
 

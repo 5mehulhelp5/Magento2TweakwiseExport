@@ -94,8 +94,6 @@ class ExportEntity
      */
     protected $typeId;
 
-    protected DateFieldType $dateFieldType;
-
     /**
      * ExportEntity constructor.
      *
@@ -140,17 +138,16 @@ class ExportEntity
         $dateFields = $this->config->getDateAttributes();
 
         foreach ($data as $key => $value) {
-            if (isset($handlers[$key])) {
-                $handlers[$key]($value);
-                $this->addAttribute($key, $value);
-                continue;
-            } elseif (in_array($key, $dateFields, true)) {
+            if (in_array($key, $dateFields, true)) {
                 $this->addDate($key, $value);
                 continue;
             }
 
-            $this->addAttribute($key, $value);
+            if (isset($handlers[$key])) {
+                $handlers[$key]($value);
+            }
 
+            $this->addAttribute($key, $value);
         }
     }
 
