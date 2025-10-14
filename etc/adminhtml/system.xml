@@ -110,7 +110,7 @@
                 </field>
 
                 <field id="date_field" translate="label,comment" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Date fields (created at/ updated at)</label>
+                    <label>Date fields (created at / updated at)</label>
                     <comment>Choose which dates to include: All exports every date (including child records), Min exports only the earliest, and Max exports only the latest.</comment>
                     <source_model>Tweakwise\Magento2TweakwiseExport\Model\Config\Source\DateField</source_model>
                     <depends>
