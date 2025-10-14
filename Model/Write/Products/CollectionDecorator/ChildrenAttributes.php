@@ -6,7 +6,6 @@ use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\Collection;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\CompositeExportEntityInterface;
 use Tweakwise\Magento2TweakwiseExport\Model\Write\Stock\Collection as StockCollection;
-use function in_array;
 
 class ChildrenAttributes implements DecoratorInterface
 {

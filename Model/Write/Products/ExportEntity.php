@@ -127,12 +127,24 @@ class ExportEntity
     public function setFromArray(array $data): void
     {
         $handlers = [
-            'entity_id' => function ($value) { $this->id = (int) $value; },
-            'type_id'   => function ($value) { $this->setTypeId((string) $value); },
-            'status'    => function ($value) { $this->setStatus((int) $value); },
-            'visibility'=> function ($value) { $this->setVisibility((int) $value); },
-            'name'      => function ($value) { $this->setName((string) $value); },
-            'price'     => function ($value) { $this->setPrice((float) $value); },
+            'entity_id' => function ($value) {
+                $this->id = (int) $value;
+            },
+            'type_id'   => function ($value) {
+                $this->setTypeId((string) $value);
+            },
+            'status'    => function ($value) {
+                $this->setStatus((int) $value);
+            },
+            'visibility'=> function ($value) {
+                $this->setVisibility((int) $value);
+            },
+            'name'      => function ($value) {
+                $this->setName((string) $value);
+            },
+            'price'     => function ($value) {
+                $this->setPrice((float) $value);
+            },
         ];
 
         $dateFields = $this->config->getDateAttributes();
