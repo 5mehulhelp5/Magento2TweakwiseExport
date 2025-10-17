@@ -98,17 +98,22 @@ class Price implements DecoratorInterface
      */
     private function applyCombinedPrices(array $row, DataObject $product, Store $store): array
     {
-        if ($this->config->calculateCombinedPrices($store)) {
-            if ($this->isGroupedProduct($product)) {
-                $prices = $this->calculateGroupedProductPrice((int)$product->getId());
-                foreach ($prices as $price => $value) {
-                    $row[$price] = $value;
-                }
-            } elseif ($this->isBundleProduct($product)) {
-                $prices = $this->calculateBundleProductPrice((int)$product->getId());
-                foreach ($prices as $price => $value) {
-                    $row[$price] = $value;
-                }
+        if (!$this->config->calculateCombinedPrices($store)) {
+            return $row;
+        }
+
+        if ($this->isGroupedProduct($product)) {
+            $prices = $this->calculateGroupedProductPrice((int)$product->getId());
+            foreach ($prices as $price => $value) {
+                $row[$price] = $value;
+            }
+            return $row;
+        }
+
+        if ($this->isBundleProduct($product)) {
+            $prices = $this->calculateBundleProductPrice((int)$product->getId());
+            foreach ($prices as $price => $value) {
+                $row[$price] = $value;
             }
         }
 
@@ -297,7 +302,7 @@ class Price implements DecoratorInterface
             $optionId = $selection->getOptionId();
             $grouped[$optionId][] = $selection;
         }
-        
+
         return $grouped;
     }
 

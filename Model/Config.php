@@ -321,7 +321,7 @@ class Config
     }
 
     /**
-     * @param Store $store
+     * @param StoreInterface|null $store
      * @return bool
      */
     public function calculateCombinedPrices(?StoreInterface $store = null): bool
