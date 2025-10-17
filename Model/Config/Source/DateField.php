@@ -2,9 +2,9 @@
 
 namespace Tweakwise\Magento2TweakwiseExport\Model\Config\Source;
 
-use Magento\Framework\Option\ArrayInterface;
+use Magento\Framework\Data\OptionSourceInterface;
 
-class DateField implements ArrayInterface
+class DateField implements OptionSourceInterface
 {
     /**
      * Return array of options as value-label pairs
@@ -14,9 +14,9 @@ class DateField implements ArrayInterface
     public function toOptionArray(): array
     {
         return [
-            'all' => 'All Dates',
-            'min' => 'Min Date',
-            'max' => 'Max Date',
+            ['value' => 'all', 'label' => __('All Dates')],
+            ['value' => 'min', 'label' => __('Min Date')],
+            ['value' => 'max', 'label' => __('Max Date')],
         ];
     }
 }

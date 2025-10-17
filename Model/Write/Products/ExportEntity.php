@@ -12,7 +12,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\Store;
 use Tweakwise\Magento2TweakwiseExport\Model\Config;
 use Magento\Catalog\Model\Product\Type;
-use Tweakwise\Magento2TweakwiseExport\Model\Write\Products\DateFieldType;
 
 /**
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
