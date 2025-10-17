@@ -144,6 +144,9 @@ class ExportEntity
             'price' => function ($value) {
                 $this->setPrice((float) $value);
             },
+           'attribute_set_id' => function ($value) {
+                $this->addAttributeSetName((int) $value);
+           },
         ];
 
         $dateFields = $this->config->getDateAttributes();
@@ -362,6 +365,20 @@ class ExportEntity
         }
 
         return current($this->attributes[$attribute]);
+    }
+
+    /**
+     * Add the attribute set name as an attribute
+     *
+     * @param int $attributeSetId
+     */
+    public function addAttributeSetName(int $attributeSetId): void
+    {
+        $attributeSetNames = $this->helper->getAttributeSetNames();
+
+        if (isset($attributeSetNames[$attributeSetId])) {
+            $this->addAttribute('attribute_set_name', $attributeSetNames[$attributeSetId]);
+        }
     }
 
     /**
