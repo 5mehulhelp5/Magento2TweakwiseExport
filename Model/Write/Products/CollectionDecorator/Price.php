@@ -107,6 +107,7 @@ class Price implements DecoratorInterface
             foreach ($prices as $price => $value) {
                 $row[$price] = $value;
             }
+
             return $row;
         }
 
