@@ -322,10 +322,10 @@ class Config
     }
 
     /**
-     * @param Store $store
+     * @param StoreInterface|null $store
      * @return bool
      */
-    public function calculateCombinedPrices(Store $store): bool
+    public function calculateCombinedPrices(?StoreInterface $store = null): bool
     {
         return (bool) $this->config->isSetFlag(self::CALCULATE_COMPOSITE_PRICES, ScopeInterface::SCOPE_STORE, $store);
     }
