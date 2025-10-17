@@ -35,6 +35,9 @@ class Helper
      */
     protected $localDate;
 
+    /**
+     * @var array|null
+     */
     protected static ?array $attributeSetNames = null;
 
     /**
