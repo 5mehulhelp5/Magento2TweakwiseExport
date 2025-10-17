@@ -150,6 +150,10 @@ class ExportEntity
                     $this->setPrice((float) $value);
                     $this->addAttribute($key, (float) $value);
                     break;
+                case 'attribute_set_id':
+                    $this->addAttribute($key, (int) $value);
+                    $this->addAttributeSetName((int) $value);
+                    break;
                 default:
                     $this->addAttribute($key, $value);
                     break;
@@ -326,6 +330,20 @@ class ExportEntity
         }
 
         return current($this->attributes[$attribute]);
+    }
+
+    /**
+     * Add the attribute set name as an attribute
+     *
+     * @param int $attributeSetId
+     */
+    public function addAttributeSetName(int $attributeSetId): void
+    {
+        $attributeSetNames = $this->helper->getAttributeSetNames();
+
+        if (isset($attributeSetNames[$attributeSetId])) {
+            $this->addAttribute('attribute_set_name', $attributeSetNames[$attributeSetId]);
+        }
     }
 
     /**
