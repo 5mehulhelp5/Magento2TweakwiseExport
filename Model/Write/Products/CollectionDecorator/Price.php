@@ -94,6 +94,7 @@ class Price implements DecoratorInterface
     /**
      * @param array $row
      * @param DataObject $product
+     * @param Store $store
      * @return array
      */
     private function applyCombinedPrices(array $row, DataObject $product, Store $store): array
